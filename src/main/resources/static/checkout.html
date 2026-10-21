@@ -1,0 +1,30 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#101828">
+  <title>Secure checkout · FlowPay</title><link rel="stylesheet" href="/checkout.css"><script src="/checkout.js" defer></script>
+</head>
+<body>
+  <main class="checkout-shell">
+    <header class="checkout-brand"><span class="brand-icon">F</span><span>flowpay</span><span class="secure">▣ SECURE CHECKOUT</span></header>
+    <section class="checkout-card">
+      <div class="checkout-top"><div class="merchant-mark" id="merchantMark">F</div><div><div class="muted">PAYING</div><h1 id="merchantName">Loading merchant…</h1></div></div>
+      <div class="amount-box"><div class="muted">ORDER TOTAL</div><div class="amount" id="orderAmount">—</div><div class="receipt" id="orderReceipt"></div></div>
+      <div id="result" class="result hidden"></div>
+      <form id="checkoutForm">
+        <div class="section-label">Choose a payment method</div>
+        <div class="methods">
+          <label class="method selected"><input type="radio" name="method" value="UPI" checked><span class="method-icon upi">U</span><span><b>UPI</b><small>Any UPI app</small></span><span class="radio"></span></label>
+          <label class="method"><input type="radio" name="method" value="CARD"><span class="method-icon card">▰</span><span><b>Card</b><small>Credit or debit card</small></span><span class="radio"></span></label>
+          <label class="method"><input type="radio" name="method" value="NETBANKING"><span class="method-icon bank">▤</span><span><b>Netbanking</b><small>All major banks</small></span><span class="radio"></span></label>
+          <label class="method"><input type="radio" name="method" value="WALLET"><span class="method-icon wallet">◈</span><span><b>Wallet</b><small>Demo wallet</small></span><span class="radio"></span></label>
+        </div>
+        <label class="scenario-label">Simulation outcome<select id="scenario"><option value="SUCCESS">Successful payment</option><option value="FAILURE">Payment failure</option><option value="DELAYED_SUCCESS">Delayed success (about 8 seconds)</option><option value="TIMEOUT">Timeout (about 20 seconds)</option></select></label>
+        <button type="submit" class="pay-button" id="payButton">Pay <span id="payAmount">—</span> <span class="arrow">→</span></button>
+        <p class="disclaimer">Demo checkout only. No real money is charged.</p>
+      </form>
+    </section>
+    <footer>Powered by <b>flowpay</b><span> · </span>Local simulator</footer>
+  </main>
+</body>
+</html>

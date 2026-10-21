@@ -1,0 +1,60 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#101828">
+  <title>FlowPay — Merchant dashboard</title>
+  <link rel="stylesheet" href="/flowpay.css">
+</head>
+<body>
+  <div class="shell">
+    <aside class="sidebar">
+      <a class="brand" href="/"><span class="brand-mark">F</span><span>flowpay<span class="brand-dot">.</span><small>PAYMENT SIMULATOR</small></span></a>
+      <div class="side-label">WORKSPACE</div>
+      <a class="nav active" href="#dashboard"><span>▦</span> Overview</a>
+      <a class="nav" href="#payments"><span>↗</span> Payments</a>
+      <a class="nav" href="#orders"><span>▤</span> Orders</a>
+      <a class="nav" href="#ledger"><span>⇄</span> Ledger</a>
+      <a class="nav" href="#refunds"><span>↩</span> Refunds</a>
+      <a class="nav" href="#settlements"><span>⇢</span> Settlements</a>
+      <div class="sidebar-bottom"><span class="live-dot"></span> Local simulator <span class="api-pill">API</span></div>
+    </aside>
+    <main class="main" id="dashboard">
+      <header class="topbar"><div class="crumb">Workspace <span>/</span> <b>Overview</b></div><div class="top-actions"><span class="server-state"><i id="serverDot"></i><span id="serverText">Checking server</span></span><button class="button quiet" id="keyButton">API key</button></div></header>
+      <section class="welcome"><div><div class="eyebrow">MERCHANT CONSOLE</div><h1>Payment overview</h1><p>Run a complete payment flow against your local FlowPay simulator.</p></div><button class="button primary" id="newOrderTop">＋ Create order</button></section>
+      <section class="notice" id="setupNotice"><div class="notice-icon">✦</div><div><strong>Get your workspace ready</strong><p>Register a demo merchant to generate an API key and unlock the dashboard.</p></div><button class="button dark" id="registerButton">Register merchant <span>→</span></button></section>
+      <section class="stats">
+        <article class="stat-card"><div class="stat-label">TOTAL PAYMENTS <span>ⓘ</span></div><div class="stat-value" id="statPayments">—</div><div class="stat-foot">All payment attempts</div><div class="stat-icon purple">↗</div></article>
+        <article class="stat-card"><div class="stat-label">SUCCESSFUL VOLUME <span>ⓘ</span></div><div class="stat-value" id="statVolume">—</div><div class="stat-foot">From successful payments</div><div class="stat-icon green">₹</div></article>
+        <article class="stat-card"><div class="stat-label">SUCCESS RATE <span>ⓘ</span></div><div class="stat-value" id="statRate">—</div><div class="stat-foot">Successful / processed</div><div class="stat-icon blue">%</div></article>
+        <article class="stat-card"><div class="stat-label">OPEN ORDERS <span>ⓘ</span></div><div class="stat-value" id="statOrders">—</div><div class="stat-foot">Awaiting payment</div><div class="stat-icon amber">▤</div></article>
+      </section>
+      <section class="content-grid">
+        <article class="panel transactions" id="payments"><div class="panel-head"><div><h2>Payments</h2><p>Search and filter all payment attempts</p></div><button class="text-button" id="refreshButton">Refresh ↻</button></div><form id="paymentFilters" class="payment-filters"><input id="filterSearch" type="search" placeholder="Search payment or order ID" aria-label="Search payments"><select id="filterStatus" aria-label="Filter by status"><option value="">All statuses</option><option>CREATED</option><option>PENDING</option><option>SUCCESS</option><option>FAILED</option></select><select id="filterMethod" aria-label="Filter by method"><option value="">All methods</option><option>UPI</option><option>CARD</option><option>WALLET</option><option>NETBANKING</option></select><input id="filterFrom" type="date" aria-label="From date"><input id="filterTo" type="date" aria-label="To date"><input id="filterMin" type="number" min="0" step="0.01" placeholder="Min ₹" aria-label="Minimum amount in rupees"><input id="filterMax" type="number" min="0" step="0.01" placeholder="Max ₹" aria-label="Maximum amount in rupees"><button class="button outline small" type="reset">Clear</button></form><div class="table-wrap"><table><thead><tr><th>PAYMENT</th><th>ORDER</th><th>METHOD</th><th>AMOUNT</th><th>STATUS</th><th>ACTION</th></tr></thead><tbody id="paymentRows"><tr><td colspan="6" class="empty">Register a merchant to see payments here.</td></tr></tbody></table></div></article>
+        <article class="panel quick-panel"><div class="panel-head"><div><h2>Quick payment</h2><p>Create and process a test payment</p></div><span class="spark">✦</span></div><form id="paymentForm" class="form"><label>Order<select id="paymentOrder" required><option value="">Create an order first</option></select></label><label>Payment method<select id="paymentMethod"><option>UPI</option><option>CARD</option><option>WALLET</option><option>NETBANKING</option></select></label><label>Simulation scenario<select id="paymentScenario"><option value="SUCCESS">Success</option><option value="FAILURE">Failure</option><option value="DELAYED_SUCCESS">Delayed success</option><option value="TIMEOUT">Timeout</option></select></label><button class="button primary full" type="submit">Create &amp; process payment <span>→</span></button><div class="form-message" id="paymentMessage"></div></form></article>
+      </section>
+      <section class="content-grid lower-grid">
+        <article class="panel" id="orders"><div class="panel-head"><div><h2>Orders</h2><p>Create orders for your customers</p></div><button class="button outline small" id="newOrderButton">＋ New order</button></div><div class="order-list" id="orderList"><div class="empty">No orders yet.</div></div></article>
+        <article class="panel" id="ledger"><div class="panel-head"><div><h2>Recent ledger entries</h2><p>Merchant balance activity</p></div><span class="ledger-tag">DOUBLE-ENTRY</span></div><div class="ledger-list" id="ledgerList"><div class="empty">Ledger entries appear after a successful payment.</div></div></article>
+      </section>
+      <section class="content-grid lower-grid financial-grid">
+        <article class="panel" id="refunds"><div class="panel-head"><div><h2>Recent refunds</h2><p>Refund successful payments from the payment table</p></div><span class="ledger-tag">REFUNDS</span></div><div class="ledger-list" id="refundList"><div class="empty">Refunds will appear here after you create one.</div></div></article>
+        <article class="panel" id="settlements"><div class="panel-head"><div><h2>Settlements</h2><p>Move simulated available balance to settled</p></div><button class="button primary small" id="settleButton">Settle balance</button></div><div class="balance-box"><span>AVAILABLE BALANCE</span><strong id="availableBalance">₹0.00</strong></div><div class="ledger-list" id="settlementList"><div class="empty">No settlements yet.</div></div></article>
+      </section>
+      <section class="content-grid lower-grid reliability-grid">
+        <article class="panel"><div class="panel-head"><div><h2>Webhook deliveries</h2><p>Signed events, delivery results, and retry controls</p></div><span class="ledger-tag">EVENT OUTBOX</span></div><div class="ledger-list" id="webhookList"><div class="empty">Configure a webhook URL to queue events.</div></div></article>
+        <article class="panel"><div class="panel-head"><div><h2>Reconciliation</h2><p>Compare successful payments with ledger credits</p></div><button class="button outline small" id="reconcileButton">Run check</button></div><div class="ledger-list" id="issueList"><div class="empty">No open reconciliation issues.</div></div></article>
+      </section>
+      <section class="panel webhook-settings"><div class="panel-head"><div><h2>Webhook receiver</h2><p>Send simulated payment and refund events to your receiver</p></div><span class="ledger-tag">SIGNED HTTP POST</span></div><form id="webhookForm" class="inline-form"><input id="webhookUrl" type="url" maxlength="500" placeholder="http://localhost:3000/webhooks" aria-label="Webhook receiver URL"><button class="button outline small" type="submit">Save URL</button><span class="form-message" id="webhookMessage"></span></form><p class="setting-hint">Delivery runs automatically. Receiver hosts must be listed in WEBHOOK_HOST. Check delivery results above; failed events can be retried.</p></section>
+      <footer>FlowPay is a local payment gateway simulator <span>·</span> No real money is moved</footer>
+    </main>
+  </div>
+  <dialog id="merchantDialog"><form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form><div class="dialog-icon">F</div><div class="eyebrow">LET'S GET STARTED</div><h2 id="merchantTitle">Create your demo workspace</h2><p class="dialog-copy" id="merchantCopy">Register a test merchant. Your API key stays in this browser on this device.</p><form id="merchantForm" class="form"><label>Business name<input id="merchantName" maxlength="100" placeholder="e.g. Acme Store" required></label><label>Business email<input id="merchantEmail" type="email" maxlength="100" placeholder="you@example.com" required></label><button type="submit" class="button primary full">Create merchant <span>→</span></button><div class="form-message" id="merchantMessage"></div></form><div class="dialog-foot">Quick local mode clears data when the server restarts. Use Docker Compose for persistent PostgreSQL storage.</div></dialog>
+  <dialog id="keyDialog"><form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form><div class="eyebrow">WORKSPACE CREDENTIALS</div><h2>Your API key</h2><p class="dialog-copy">Credentials are saved only in this browser's local storage. Keep the signing secret private; configure it in your webhook receiver to verify deliveries.</p><div class="key-box"><code id="keyValue">No API key saved</code><button class="button outline small" id="copyKey">Copy</button></div><div class="key-box"><code id="webhookSecretValue">No signing secret saved</code><button class="button outline small" id="copyWebhookSecret">Copy</button></div><button class="text-button danger" id="forgetKey">Forget these credentials</button></dialog>
+  <dialog id="refundDialog"><form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form><div class="eyebrow">CREATE REFUND</div><h2>Refund payment</h2><p class="dialog-copy" id="refundPaymentLabel">Choose an amount to return to the customer.</p><form id="refundForm" class="form"><input type="hidden" id="refundPaymentId"><label>Refund amount (₹)<input id="refundAmount" type="number" min="0.01" step="0.01" required></label><button type="submit" class="button primary full">Create refund <span>→</span></button><div class="form-message" id="refundMessage"></div></form></dialog>
+  <dialog id="orderDialog"><form method="dialog" class="dialog-close"><button aria-label="Close">×</button></form><div class="eyebrow">NEW ORDER</div><h2>Create an order</h2><p class="dialog-copy">Set the amount your customer needs to pay.</p><form id="orderForm" class="form"><label>Amount (₹)<input id="orderAmount" type="number" min="1" max="1000000" step="0.01" placeholder="125.00" required></label><label>Receipt reference<input id="orderReceipt" maxlength="100" placeholder="order-001" required></label><button type="submit" class="button primary full">Create order <span>→</span></button><div class="form-message" id="orderMessage"></div></form></dialog>
+  <div class="toast" id="toast" role="status"></div>
+  <script src="/flowpay.js" defer></script>
+</body>
+</html>

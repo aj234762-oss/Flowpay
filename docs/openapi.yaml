@@ -1,0 +1,157 @@
+openapi: 3.1.0
+info:
+  title: FlowPay Simulator API
+  version: 1.0.0
+  description: Local-only payment gateway simulator. No real funds are moved.
+servers:
+  - url: http://localhost:8080
+security:
+  - ApiKey: []
+paths:
+  /api/merchants:
+    post:
+      security: []
+      summary: Register a demo merchant
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: { type: string, maxLength: 100 }
+                email: { type: string, format: email }
+      responses:
+        '201': { description: Merchant plus one-time API key and webhook signing secret }
+  /api/merchants/me:
+    get:
+      summary: Read authenticated merchant settings
+      responses:
+        '200': { description: Merchant profile }
+    put:
+      summary: Update merchant profile and local webhook URL
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email]
+              properties:
+                name: { type: string }
+                email: { type: string, format: email }
+                webhookUrl: { type: string, format: uri }
+      responses:
+        '200': { description: Updated merchant }
+  /api/orders:
+    post:
+      summary: Create an order (amount is integer paise)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, receipt]
+              properties:
+                amount: { type: integer, minimum: 100, maximum: 100000000, example: 12500 }
+                receipt: { type: string, maxLength: 100 }
+      responses:
+        '201': { description: Created order }
+    get:
+      summary: List merchant orders
+      responses:
+        '200': { description: Orders }
+  /api/checkout-sessions:
+    post:
+      summary: Create a public checkout link for an unpaid order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId]
+              properties:
+                orderId: { type: string }
+      responses:
+        '201': { description: Checkout session and checkoutUrl }
+  /api/public/checkout/{token}:
+    get:
+      security: []
+      summary: Read checkout session and order information
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Checkout session }
+  /api/public/checkout/{token}/pay:
+    post:
+      security: []
+      summary: Start a simulated payment from customer checkout
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [method, scenario]
+              properties:
+                method: { type: string, enum: [UPI, CARD, WALLET, NETBANKING] }
+                scenario: { type: string, enum: [SUCCESS, FAILURE, DELAYED_SUCCESS, TIMEOUT] }
+      responses:
+        '200': { description: Payment status and checkout state }
+  /api/payments:
+    post:
+      summary: Create payment directly (merchant API)
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [orderId, method, scenario]
+              properties:
+                orderId: { type: string }
+                method: { type: string, enum: [UPI, CARD, WALLET, NETBANKING] }
+                scenario: { type: string, enum: [SUCCESS, FAILURE, DELAYED_SUCCESS, TIMEOUT] }
+      responses:
+        '201': { description: Created payment }
+  /api/webhooks:
+    get:
+      summary: List persisted webhook event records
+      responses:
+        '200': { description: Event delivery records (outbound transport is disabled) }
+  /api/reconciliation/run:
+    post:
+      summary: Compare successful payments with ledger credits
+      responses:
+        '200': { description: Reconciliation report }
+  /api/reconciliation/issues:
+    get:
+      summary: List reconciliation discrepancies
+      parameters:
+        - in: query
+          name: status
+          schema: { type: string, enum: [OPEN, RESOLVED] }
+      responses:
+        '200': { description: Issue records }
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key
