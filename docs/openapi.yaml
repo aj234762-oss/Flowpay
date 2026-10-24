@@ -1,0 +1,263 @@
+openapi: 3.1.0
+info:
+  title: FlowPay Simulator API
+  version: 1.0.0
+  description: Local payment simulator. No real funds are moved.
+servers:
+  - url: http://localhost:8080
+security:
+  - ApiKey: []
+paths:
+  /api/auth/register:
+    post:
+      security: []
+      summary: Create a merchant and owner dashboard account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string, maxLength: 100 }
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, maxLength: 72 }
+      responses:
+        '201': { description: Merchant, session, API key, and one-time webhook secret }
+        '409': { description: Email already registered }
+  /api/auth/login:
+    post:
+      security: []
+      summary: Sign in to a dashboard account
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string }
+      responses:
+        '200': { description: Dashboard session token, role, and merchant }
+        '401': { description: Invalid credentials }
+  /api/auth/logout:
+    post:
+      summary: Revoke the current dashboard session
+      responses:
+        '204': { description: Session revoked }
+  /api/auth/credentials/api-key/rotate:
+    post:
+      summary: Replace the merchant API key (owner password required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '200': { description: New API key, shown once; old API key is revoked }
+        '401': { description: Invalid dashboard session or password }
+        '403': { description: Owner access required }
+  /api/auth/credentials/webhook-secret/rotate:
+    post:
+      summary: Replace the webhook signing secret (owner password required)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string }
+      responses:
+        '200': { description: New webhook secret, shown once; receiver must be updated }
+        '401': { description: Invalid dashboard session or password }
+        '403': { description: Owner access required }
+  /api/users:
+    get:
+      summary: List dashboard accounts for this merchant
+      responses:
+        '200': { description: Dashboard users }
+    post:
+      summary: Add a dashboard owner or read-only viewer (owner only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password, role]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, minLength: 8, maxLength: 72 }
+                role: { type: string, enum: [OWNER, VIEWER] }
+      responses:
+        '201': { description: Dashboard user created }
+        '403': { description: Owner access required }
+  /api/merchants/me:
+    get:
+      summary: Read current merchant settings
+      responses:
+        '200': { description: Merchant settings and current role }
+    put:
+      summary: Update merchant profile and webhook URL
+      responses:
+        '200': { description: Updated merchant }
+  /api/orders:
+    get:
+      summary: List orders
+      responses:
+        '200': { description: Merchant orders }
+    post:
+      summary: Create an order (amount is integer paise)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount, receipt]
+              properties:
+                amount: { type: integer, minimum: 100, maximum: 100000000, example: 12500 }
+                receipt: { type: string, maxLength: 100 }
+      responses:
+        '201': { description: Order created }
+  /api/checkout-sessions:
+    post:
+      summary: Create a public checkout link for an order
+      responses:
+        '201': { description: Checkout session and URL (expires after 30 minutes) }
+  /api/public/checkout/{token}:
+    get:
+      security: []
+      summary: Read public checkout details
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Checkout details }
+  /api/public/checkout/{token}/pay:
+    post:
+      security: []
+      summary: Start a simulated checkout payment
+      parameters:
+        - in: path
+          name: token
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Payment and checkout status }
+  /api/payments:
+    post:
+      summary: Create an idempotent payment attempt
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      responses:
+        '201': { description: Payment created }
+  /api/payments/{id}/process:
+    post:
+      summary: Process a simulated bank result
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Updated payment }
+  /api/payments/{id}/check:
+    post:
+      summary: Check a pending simulated payment
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Updated payment }
+  /api/transactions:
+    get:
+      summary: List payments with optional status and date filters
+      responses:
+        '200': { description: Payments }
+  /api/transactions/ledger:
+    get:
+      summary: List ledger entries
+      responses:
+        '200': { description: Ledger entries }
+  /api/refunds:
+    get:
+      summary: List refunds
+      responses:
+        '200': { description: Refunds }
+    post:
+      summary: Create a partial or full refund
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      responses:
+        '201': { description: Refund created }
+  /api/settlements:
+    get:
+      summary: List settlements
+      responses:
+        '200': { description: Settlements }
+    post:
+      summary: Settle the available simulated balance
+      parameters:
+        - in: header
+          name: Idempotency-Key
+          required: true
+          schema: { type: string }
+      responses:
+        '201': { description: Settlement created }
+  /api/webhooks:
+    get:
+      summary: List webhook delivery history
+      responses:
+        '200': { description: Delivery records }
+  /api/webhooks/{id}/retry:
+    post:
+      summary: Retry a failed webhook delivery
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { description: Delivery queued for retry }
+  /api/reconciliation/run:
+    post:
+      summary: Compare payments and ledger entries
+      responses:
+        '200': { description: Reconciliation report }
+  /api/reconciliation/issues:
+    get:
+      summary: List reconciliation issues
+      responses:
+        '200': { description: Reconciliation issues }
+  /actuator/health:
+    get:
+      security: []
+      summary: Check service health
+      responses:
+        '200': { description: Health status }
+components:
+  securitySchemes:
+    ApiKey:
+      type: apiKey
+      in: header
+      name: X-Api-Key

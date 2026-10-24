@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>FlowPay · Webhook inbox</title>
+    <style>
+      :root { color-scheme: light; font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: #203a32; background: #f5f7f2; }
+      * { box-sizing: border-box; }
+      body { margin: 0; }
+      header { background: #fff; border-bottom: 1px solid #e4e9e1; padding: 22px max(24px, calc((100vw - 1080px) / 2)); }
+      header strong { font-size: 20px; }
+      main { width: min(1080px, calc(100% - 32px)); margin: 36px auto; }
+      h1 { margin: 0 0 8px; font-size: clamp(28px, 4vw, 38px); }
+      p { color: #738176; line-height: 1.5; }
+      .panel, .delivery { background: white; border: 1px solid #e2e9df; border-radius: 16px; padding: 22px; margin: 20px 0; box-shadow: 0 3px 12px #233a3210; }
+      .secret-row { display: flex; gap: 10px; margin-top: 12px; }
+      input { flex: 1; min-width: 0; border: 1px solid #d8e2d6; border-radius: 9px; padding: 12px 14px; font: inherit; }
+      button { border: 0; border-radius: 9px; padding: 12px 16px; background: #214f40; color: white; font: inherit; font-weight: 650; cursor: pointer; }
+      button.secondary { color: #34574b; background: #edf3e9; }
+      button:disabled { opacity: .55; cursor: default; }
+      .small { font-size: 13px; }
+      .status { display: inline-flex; border-radius: 20px; padding: 5px 10px; font-size: 12px; font-weight: 700; background: #fff4d8; color: #80610d; }
+      .status.ok { color: #176b43; background: #e6f5e9; }
+      .status.bad { color: #a33d2c; background: #ffede7; }
+      .delivery-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+      .delivery-head h2 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+      time { color: #788579; font-size: 13px; }
+      pre { white-space: pre-wrap; overflow-wrap: anywhere; background: #f6f8f5; border-radius: 10px; padding: 14px; margin: 14px 0 0; color: #273d34; }
+      .empty { text-align: center; color: #829083; padding: 44px 12px; }
+      .actions { display: flex; gap: 8px; }
+      #message { min-height: 20px; margin: 8px 0 0; }
+      @media (max-width: 600px) { .secret-row, .delivery-head { align-items: stretch; flex-direction: column; } .actions button { flex: 1; } }
+    </style>
+  </head>
+  <body>
+    <header><strong>FlowPay <span style="color:#78936d">· Webhook inbox</span></strong></header>
+    <main>
+      <h1>Webhook inbox</h1>
+      <p>Local receiver for simulated FlowPay payment and refund events.</p>
+      <section class="panel">
+        <div class="delivery-head">
+          <div>
+            <strong>Signing secret</strong>
+            <p class="small">Paste this merchant’s webhook secret from FlowPay registration. It stays in memory and must be entered again after restarting this receiver.</p>
+          </div>
+          <span id="secret-state" class="status">Checking…</span>
+        </div>
+        <form id="secret-form" class="secret-row">
+          <input id="secret" type="password" autocomplete="off" placeholder="Webhook signing secret" aria-label="Webhook signing secret" />
+          <button type="submit">Save secret</button>
+          <button id="clear-secret" class="secondary" type="button">Clear</button>
+        </form>
+        <p id="message" class="small" role="status"></p>
+      </section>
+      <section class="panel">
+        <div class="delivery-head">
+          <div><strong>Received deliveries</strong><p class="small">FlowPay should send POST requests to <code>/webhooks/flowpay</code>.</p></div>
+          <div class="actions"><button id="refresh" class="secondary" type="button">Refresh</button><button id="clear-inbox" class="secondary" type="button">Clear inbox</button></div>
+        </div>
+        <div id="events" class="empty">No webhook deliveries received yet.</div>
+      </section>
+    </main>
+    <script>
+      const secretInput = document.querySelector("#secret");
+      const secretState = document.querySelector("#secret-state");
+      const message = document.querySelector("#message");
+      const eventsNode = document.querySelector("#events");
+
+      async function updateSecretState() {
+        const response = await fetch("/api/status", { cache: "no-store" });
+        const status = await response.json();
+        secretState.textContent = status.secretConfigured ? "Secret set" : "Secret not set";
+        secretState.className = status.secretConfigured ? "status ok" : "status";
+      }
+
+      function addText(parent, tag, text, className) {
+        const element = document.createElement(tag);
+        element.textContent = text;
+        if (className) element.className = className;
+        parent.append(element);
+        return element;
+      }
+
+      async function refreshEvents() {
+        const response = await fetch("/api/events", { cache: "no-store" });
+        const events = await response.json();
+        eventsNode.replaceChildren();
+        eventsNode.className = events.length ? "" : "empty";
+        if (!events.length) {
+          eventsNode.textContent = "No webhook deliveries received yet.";
+          return;
+        }
+        for (const event of events) {
+          const card = document.createElement("article");
+          card.className = "delivery";
+          const heading = document.createElement("div");
+          heading.className = "delivery-head";
+          const titleWrap = document.createElement("div");
+          const title = document.createElement("h2");
+          title.textContent = event.eventType + " · " + event.eventId;
+          titleWrap.append(title);
+          if (event.deliveryId) addText(titleWrap, "time", "Delivery " + event.deliveryId);
+          heading.append(titleWrap);
+          const stateClass = event.verification === "VERIFIED" ? "status ok" : event.verification === "INVALID SIGNATURE" ? "status bad" : "status";
+          addText(heading, "span", event.verification, stateClass);
+          card.append(heading);
+          addText(card, "time", new Date(event.receivedAt).toLocaleString());
+          const payload = document.createElement("pre");
+          payload.textContent = typeof event.payload === "string" ? event.payload : JSON.stringify(event.payload, null, 2);
+          card.append(payload);
+          eventsNode.append(card);
+        }
+      }
+
+      document.querySelector("#secret-form").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const response = await fetch("/api/secret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret: secretInput.value }),
+        });
+        const result = await response.json();
+        message.textContent = response.ok ? (result.secretConfigured ? "Secret saved in the running receiver." : "Secret cleared.") : result.message;
+        secretInput.value = "";
+        await updateSecretState();
+      });
+
+      document.querySelector("#clear-secret").addEventListener("click", async () => {
+        const response = await fetch("/api/secret", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ secret: "" }),
+        });
+        const result = await response.json();
+        message.textContent = response.ok ? "Secret cleared." : result.message;
+        await updateSecretState();
+      });
+
+      document.querySelector("#refresh").addEventListener("click", refreshEvents);
+      document.querySelector("#clear-inbox").addEventListener("click", async () => {
+        await fetch("/api/events", { method: "DELETE" });
+        await refreshEvents();
+      });
+
+      updateSecretState();
+      refreshEvents();
+      setInterval(refreshEvents, 3000);
+    </script>
+  </body>
+</html>
